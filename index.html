@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raphael — AI Agent Specialist</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Required stack — Lenis first, then GSAP, then plugins, then SplitType -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/split-type@0.3.4/umd/index.min.js"></script>
+
+  <style>
+    /* ─────────────────────────────────────────────
+       DESIGN TOKENS — no raw hex anywhere else
+    ───────────────────────────────────────────── */
+    :root {
+      --bg:            #ffffff;
+      --bg-off:        #f7f8fb;
+      --ink:           #09101f;
+      --ink-mid:       #1c2438;
+      --muted:         #6b7a99;
+      --border:        rgba(9,16,31,0.08);
+      --accent:        #0070F3;
+      --accent-dim:    rgba(0,112,243,0.10);
+      --accent-glow:   rgba(0,112,243,0.28);
+      --white:         #ffffff;
+
+      --f-display:     'Cabinet Grotesk', sans-serif;
+      --f-body:        'Plus Jakarta Sans', sans-serif;
+
+      --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
+      --t:             0.4s var(--ease-out);
+      --radius:        6px;
+      --section-pad:   130px 64px;
+      --max:           1100px;
+    }
+
+    /* ─────────────────────────────────────────────
+       RESET
+    ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { overflow-x: hidden; }
+    body {
+      font-family: var(--f-body);
+      background: var(--bg);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      cursor: none;
+    }
+    a { text-decoration: none; color: inherit; }
+    img, svg { display: block; }
+
+    /* ─────────────────────────────────────────────
+       CUSTOM CURSOR
+    ───────────────────────────────────────────── */
+    #c-dot {
+      position: fixed;
+      top: 0; left: 0;
+      width: 7px; height: 7px;
+      background: var(--ink);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      mix-blend-mode: difference;
+      will-change: transform;
+    }
+    #c-ring {
+      position: fixed;
+      top: 0; left: 0;
+      width: 38px; height: 38px;
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      mix-blend-mode: difference;
+      will-change: transform;
+      transition: width var(--t), height var(--t), border-color var(--t);
+    }
+    body.hovered #c-ring {
+      width: 64px;
+      height: 64px;
+      border-color: var(--accent);
+    }
+
+    /* ─────────────────────────────────────────────
+       NAV
+    ───────────────────────────────────────────── */
+    .nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 64px;
+      height: 70px;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: var(--f-display);
+      font-weight: 900;
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color var(--t);
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-links .nav-btn {
+      background: var(--ink);
+      color: var(--white);
+      padding: 9px 22px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background var(--t), color var(--t);
+    }
+    .nav-links .nav-btn:hover { background: var(--accent); color: var(--white); }
+
+    /* ─────────────────────────────────────────────
+       HERO
+       Full-viewport. Name is the only focal point.
+       Tagline sits below as secondary structure.
+    ───────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding: 70px 64px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ruled horizontal lines — structural, not decorative */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 79px,
+        var(--border) 79px,
+        var(--border) 80px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 60px;
+      max-width: var(--max);
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 32px;
+      opacity: 0;
+    }
+    .hero-kicker::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    /* The name — primary visual architecture */
+    .hero-name {
+      font-family: var(--f-display);
+      font-size: clamp(5.5rem, 13vw, 12rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.88;
+      color: var(--ink);
+      margin-bottom: 48px;
+      overflow: hidden;
+    }
+    .hero-name .char { display: inline-block; }
+    .hero-name .accent { color: var(--accent); }
+
+    .hero-foot {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 48px;
+    }
+    .hero-tagline {
+      font-family: var(--f-display);
+      font-size: clamp(1.3rem, 2.4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      color: var(--ink);
+      max-width: 540px;
+      opacity: 0;
+    }
+    .hero-tagline .hl { color: var(--accent); }
+    .hero-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+      opacity: 0;
+    }
+    .hero-meta-line {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    .hero-meta-line strong { color: var(--ink); font-weight: 600; }
+
+    /* Scrolling ticker at bottom of hero */
+    .hero-ticker {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      animation: ticker 28s linear infinite;
+    }
+    .ticker-item {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 14px 32px;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .ticker-item.hi { color: var(--accent); }
+    @keyframes ticker {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ─────────────────────────────────────────────
+       STATEMENT
+       One idea, large — no cards, no bullets
+    ───────────────────────────────────────────── */
+    .statement {
+      padding: var(--section-pad);
+      background: var(--ink);
+    }
+    .statement-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+    }
+    .statement-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .statement-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+    }
+    .statement-copy {
+      font-family: var(--f-display);
+      font-size: clamp(2rem, 4.2vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      color: var(--white);
+    }
+    .statement-copy em {
+      font-style: italic;
+      font-weight: 500;
+      color: rgba(255,255,255,0.35);
+    }
+    .statement-copy .hi { color: var(--accent); }
+
+    /* ─────────────────────────────────────────────
+       PROCESS — Sticky left + scrollable panels
+    ───────────────────────────────────────────── */
+    .process-wrap {
+      background: var(--bg-off);
+    }
+    .process-layout {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: 100vh;
+    }
+    .process-pin {
+      position: sticky;
+      top: 70px;
+      height: calc(100vh - 70px);
+      padding: 80px 48px 80px 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+    }
+    .process-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .process-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+    }
+    .process-heading {
+      font-family: var(--f-display);
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      color: var(--ink);
+      margin-bottom: 48px;
+    }
+    .process-heading span { color: var(--accent); }
+    .p-nav { list-style: none; display: flex; flex-direction: column; gap: 0; }
+    .p-nav-item {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: color var(--t);
+    }
+    .p-nav-item.is-active { color: var(--ink); font-weight: 600; }
+    .p-nav-item .num {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: var(--f-display);
+      letter-spacing: 0.06em;
+      min-width: 20px;
+    }
+
+    .process-panels {
+      padding: 80px 64px 80px 64px;
+    }
+    .p-panel {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .p-panel:last-child { border-bottom: none; }
+    .p-panel-num {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 20px;
+      font-family: var(--f-display);
+    }
+    .p-panel-title {
+      font-family: var(--f-display);
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      color: var(--ink);
+      margin-bottom: 20px;
+    }
+    .p-panel-body {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 480px;
+    }
+
+    /* ─────────────────────────────────────────────
+       WORK — Horizontal list, not a card grid
+    ───────────────────────────────────────────── */
+    .work {
+      padding: var(--section-pad);
+      background: var(--bg);
+    }
+    .work-inner { max-width: var(--max); margin: 0 auto; }
+    .work-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 64px;
+    }
+    .s-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .s-label::before { content: ''; display: block; width: 20px; height: 1px; background: var(--accent); }
+    .s-heading {
+      font-family: var(--f-display);
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      color: var(--ink);
+    }
+
+    .work-list { display: flex; flex-direction: column; }
+    .work-item {
+      display: grid;
+      grid-template-columns: 60px 1fr 1fr 120px;
+      align-items: center;
+      gap: 32px;
+      padding: 30px 0;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--t);
+    }
+    .work-item:first-child { border-top: 1px solid var(--border); }
+    .work-item:hover .wi-title { color: var(--accent); }
+    .work-item:hover .wi-arrow { opacity: 1; transform: translate(3px,-3px); }
+
+    .wi-idx {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      font-family: var(--f-display);
+      letter-spacing: 0.06em;
+    }
+    .wi-title {
+      font-family: var(--f-display);
+      font-size: clamp(1.2rem, 2vw, 1.7rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      transition: color var(--t);
+    }
+    .wi-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .wi-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .wi-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 4px 10px;
+      border-radius: var(--radius);
+    }
+    .wi-arrow {
+      display: none; /* shown via grid on wider layout */
+    }
+
+    /* ─────────────────────────────────────────────
+       STACK
+    ───────────────────────────────────────────── */
+    .stack {
+      padding: var(--section-pad);
+      background: var(--bg-off);
+    }
+    .stack-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+    .stack-sticky {
+      position: sticky;
+      top: 100px;
+    }
+    .stack-body-text {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-top: 16px;
+      max-width: 300px;
+    }
+    .stack-table {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .st-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--t);
+    }
+    .st-row:last-child { border-bottom: none; }
+    .st-row:hover { background: var(--bg-off); }
+    .st-cat {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 22px 20px;
+      border-right: 1px solid var(--border);
+    }
+    .st-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px 20px;
+      align-items: center;
+    }
+    .st-pill {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--bg-off);
+      border: 1px solid var(--border);
+      padding: 5px 13px;
+      border-radius: 100px;
+    }
+
+    /* ─────────────────────────────────────────────
+       ABOUT
+    ───────────────────────────────────────────── */
+    .about {
+      padding: var(--section-pad);
+      background: var(--bg);
+    }
+    .about-inner { max-width: var(--max); margin: 0 auto; }
+    .about-quote {
+      font-family: var(--f-display);
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 64px;
+    }
+    .about-quote em {
+      font-style: italic;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--border);
+      gap: 1px;
+    }
+    .about-cell {
+      background: var(--bg);
+      padding: 28px 28px;
+    }
+    .about-cell-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .about-cell-val {
+      font-family: var(--f-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.015em;
+    }
+
+    /* ─────────────────────────────────────────────
+       CONTACT
+    ───────────────────────────────────────────── */
+    .contact {
+      padding: var(--section-pad);
+      background: var(--ink);
+    }
+    .contact-inner { max-width: var(--max); margin: 0 auto; }
+    .contact-heading {
+      font-family: var(--f-display);
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 0.92;
+      color: var(--white);
+      margin-bottom: 56px;
+    }
+    .contact-heading .hi { color: var(--accent); }
+    .contact-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 48px;
+    }
+    .contact-sub {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.75;
+      max-width: 400px;
+    }
+    .contact-btns {
+      display: flex;
+      gap: 14px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    /* ─────────────────────────────────────────────
+       BUTTONS
+    ───────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--f-body);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      cursor: none;
+      transition: transform var(--t), box-shadow var(--t), background var(--t), color var(--t), border-color var(--t);
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: var(--white);
+      box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    .btn-accent:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px var(--accent-glow);
+    }
+    .btn-ghost-dark {
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: 1.5px solid rgba(255,255,255,0.12);
+    }
+    .btn-ghost-dark:hover {
+      border-color: var(--accent);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+    .btn-ghost-light {
+      background: transparent;
+      color: var(--ink);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost-light:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* ─────────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────────── */
+    footer {
+      background: var(--ink);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 32px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .f-logo {
+      font-family: var(--f-display);
+      font-weight: 900;
+      font-size: 0.95rem;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+    .f-logo span { color: var(--accent); }
+    .f-links { display: flex; gap: 28px; }
+    .f-links a {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.3);
+      transition: color var(--t);
+    }
+    .f-links a:hover { color: var(--white); }
+    .f-copy { font-size: 0.78rem; color: rgba(255,255,255,0.2); }
+
+    /* ─────────────────────────────────────────────
+       MOBILE
+    ───────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      :root { --section-pad: 80px 24px; }
+      .nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      .hero { padding: 70px 24px 0; }
+      .hero-foot { flex-direction: column; align-items: flex-start; gap: 24px; }
+      .hero-meta { align-items: flex-start; }
+      .process-layout { grid-template-columns: 1fr; }
+      .process-pin { position: static; height: auto; padding: 60px 24px 32px; }
+      .process-panels { padding: 0 24px 60px; }
+      .p-panel { min-height: auto; padding: 40px 0; }
+      .work-item { grid-template-columns: 40px 1fr; }
+      .wi-desc, .wi-tags { display: none; }
+      .stack-inner { grid-template-columns: 1fr; gap: 40px; }
+      .stack-sticky { position: static; }
+      .st-row { grid-template-columns: 1fr; }
+      .st-cat { border-right: none; border-bottom: 1px solid var(--border); }
+      .about-grid { grid-template-columns: repeat(2,1fr); }
+      .contact-row { flex-direction: column; }
+      footer { flex-direction: column; gap: 16px; text-align: center; padding: 28px 24px; }
+      #c-dot, #c-ring { display: none; }
+      body { cursor: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CURSOR -->
+  <div id="c-dot"></div>
+  <div id="c-ring"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">Raphael<span>.</span></a>
+    <ul class="nav-links">
+      <li><a href="#work">Work</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://github.com/aiagentmackenzie-lang" target="_blank">GitHub</a></li>
+      <li><a href="#contact" class="nav-btn">Start a Project</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-body">
+      <p class="hero-kicker" id="js-kicker">IBM Certified · AI Developer · Cybersecurity Analyst</p>
+
+      <h1 class="hero-name" id="js-name">
+        Raphael<span class="accent">.</span>
+      </h1>
+
+      <div class="hero-foot">
+        <p class="hero-tagline" id="js-tagline">
+          Stop drowning in tasks.<br>
+          <span class="hl">Start running on agents.</span>
+        </p>
+        <div class="hero-meta" id="js-meta">
+          <span class="hero-meta-line"><strong>Available</strong> for contract work</span>
+          <span class="hero-meta-line">Brazil · <strong>GMT-3</strong></span>
+          <span class="hero-meta-line">MVPs in <strong>1–2 weeks</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-ticker">
+      <div class="ticker-track">
+        <span class="ticker-item hi">20+ AI Agents Built</span>
+        <span class="ticker-item">CrewAI</span>
+        <span class="ticker-item">LangChain</span>
+        <span class="ticker-item">RAG</span>
+        <span class="ticker-item hi">50+ Custom Skills</span>
+        <span class="ticker-item">Python</span>
+        <span class="ticker-item">TypeScript</span>
+        <span class="ticker-item">Swift</span>
+        <span class="ticker-item hi">1–2 Week MVPs</span>
+        <span class="ticker-item">Next.js</span>
+        <span class="ticker-item">Docker</span>
+        <span class="ticker-item">Kubernetes</span>
+        <span class="ticker-item hi">34 GitHub Repos</span>
+        <span class="ticker-item">Voice AI</span>
+        <span class="ticker-item">Multi-Agent Systems</span>
+        <!-- duplicate for seamless loop -->
+        <span class="ticker-item hi">20+ AI Agents Built</span>
+        <span class="ticker-item">CrewAI</span>
+        <span class="ticker-item">LangChain</span>
+        <span class="ticker-item">RAG</span>
+        <span class="ticker-item hi">50+ Custom Skills</span>
+        <span class="ticker-item">Python</span>
+        <span class="ticker-item">TypeScript</span>
+        <span class="ticker-item">Swift</span>
+        <span class="ticker-item hi">1–2 Week MVPs</span>
+        <span class="ticker-item">Next.js</span>
+        <span class="ticker-item">Docker</span>
+        <span class="ticker-item">Kubernetes</span>
+        <span class="ticker-item hi">34 GitHub Repos</span>
+        <span class="ticker-item">Voice AI</span>
+        <span class="ticker-item">Multi-Agent Systems</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATEMENT ── -->
+  <section class="statement">
+    <div class="statement-inner">
+      <p class="statement-label">What I Do</p>
+      <p class="statement-copy js-statement">
+        I build <span class="hi">AI agents</span> that do the work your team is drowning in. Secure. Fast. <em>Yours to own</em> — not a subscription to someone else's black box. Teaching you to use them, safely and effectively.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── PROCESS ── -->
+  <div id="process" class="process-wrap">
+    <div class="process-layout">
+      <aside class="process-pin">
+        <p class="process-label">Process</p>
+        <h2 class="process-heading">From first coffee<br>to final <span>commit.</span></h2>
+        <ul class="p-nav" id="js-p-nav">
+          <li class="p-nav-item is-active" data-idx="0"><span class="num">01</span> Understand the Problem</li>
+          <li class="p-nav-item" data-idx="1"><span class="num">02</span> Design for Humans</li>
+          <li class="p-nav-item" data-idx="2"><span class="num">03</span> Build with Agents</li>
+          <li class="p-nav-item" data-idx="3"><span class="num">04</span> Security by Default</li>
+        </ul>
+      </aside>
+
+      <div class="process-panels" id="js-p-panels">
+        <div class="p-panel" data-panel="0">
+          <p class="p-panel-num">01</p>
+          <h3 class="p-panel-title">Understand<br>the Problem</h3>
+          <p class="p-panel-body">Deep discovery before a single line of code. The difference between a useful agent and an expensive mistake is understanding the real bottleneck — not the symptom you're describing.</p>
+        </div>
+        <div class="p-panel" data-panel="1">
+          <p class="p-panel-num">02</p>
+          <h3 class="p-panel-title">Design<br>for Humans</h3>
+          <p class="p-panel-body">Interfaces so intuitive they need no instruction manual. If your team needs training to use what I built, I designed it wrong. Simplicity is the hardest thing to engineer correctly.</p>
+        </div>
+        <div class="p-panel" data-panel="2">
+          <p class="p-panel-num">03</p>
+          <h3 class="p-panel-title">Build with<br>Agents</h3>
+          <p class="p-panel-body">Custom multi-agent systems with real human oversight built in. Not a prompt duct-taped to an API — structured pipelines that know when to escalate and when to run autonomously.</p>
+        </div>
+        <div class="p-panel" data-panel="3">
+          <p class="p-panel-num">04</p>
+          <h3 class="p-panel-title">Security<br>by Default</h3>
+          <p class="p-panel-body">Encryption and privacy-first architecture from day one. Security is not a feature you add at the end. It is the foundation everything else is built on. Your data stays yours.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WORK ── -->
+  <section class="work" id="work">
+    <div class="work-inner">
+      <div class="work-header">
+        <div>
+          <p class="s-label">Featured Work</p>
+          <h2 class="s-heading">Real problems.<br>Real solutions.</h2>
+        </div>
+        <a href="https://github.com/aiagentmackenzie-lang" target="_blank" class="btn btn-ghost-light">View GitHub →</a>
+      </div>
+
+      <div class="work-list">
+        <div class="work-item">
+          <span class="wi-idx">001</span>
+          <div class="wi-title">Curriculum Agent</div>
+          <p class="wi-desc">Multi-agent system that interviews students and auto-generates tailored 6-month curricula. Hours of teacher planning — automated.</p>
+          <div class="wi-tags">
+            <span class="wi-tag">CrewAI</span>
+            <span class="wi-tag">Multi-Agent</span>
+            <span class="wi-tag">Education</span>
+          </div>
+        </div>
+        <div class="work-item">
+          <span class="wi-idx">002</span>
+          <div class="wi-title">AgroVision</div>
+          <p class="wi-desc">AI crop disease diagnosis across 5 crop types in all 27 Brazilian states. Works fully offline in the field.</p>
+          <div class="wi-tags">
+            <span class="wi-tag">React Native</span>
+            <span class="wi-tag">AI Vision</span>
+            <span class="wi-tag">Expo</span>
+          </div>
+        </div>
+        <div class="work-item">
+          <span class="wi-idx">003</span>
+          <div class="wi-title">StackPulse</div>
+          <p class="wi-desc">Native iOS app monitoring GitHub projects with AI context generation. Instant answers on vulnerabilities and dependencies.</p>
+          <div class="wi-tags">
+            <span class="wi-tag">Swift</span>
+            <span class="wi-tag">SwiftUI</span>
+            <span class="wi-tag">OpenAI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STACK ── -->
+  <section class="stack" id="stack">
+    <div class="stack-inner">
+      <div class="stack-sticky">
+        <p class="s-label">Stack</p>
+        <h2 class="s-heading">Built with<br>the right<br>tools.</h2>
+        <p class="stack-body-text">Not trend-chasing. A deliberate stack chosen for production reliability, security, and speed to market.</p>
+      </div>
+      <div class="stack-table">
+        <div class="st-row">
+          <div class="st-cat">Languages</div>
+          <div class="st-pills">
+            <span class="st-pill">Python</span><span class="st-pill">TypeScript</span><span class="st-pill">JavaScript</span><span class="st-pill">Swift</span><span class="st-pill">SQL</span><span class="st-pill">Bash</span>
+          </div>
+        </div>
+        <div class="st-row">
+          <div class="st-cat">AI & Agents</div>
+          <div class="st-pills">
+            <span class="st-pill">CrewAI</span><span class="st-pill">LangChain</span><span class="st-pill">RAG</span><span class="st-pill">LLMs</span><span class="st-pill">Voice AI</span><span class="st-pill">OpenClaw</span>
+          </div>
+        </div>
+        <div class="st-row">
+          <div class="st-cat">Full-Stack</div>
+          <div class="st-pills">
+            <span class="st-pill">React</span><span class="st-pill">Next.js</span><span class="st-pill">Node.js</span><span class="st-pill">FastAPI</span><span class="st-pill">Django</span><span class="st-pill">SwiftUI</span>
+          </div>
+        </div>
+        <div class="st-row">
+          <div class="st-cat">DevOps & Security</div>
+          <div class="st-pills">
+            <span class="st-pill">Docker</span><span class="st-pill">Kubernetes</span><span class="st-pill">CI/CD</span><span class="st-pill">PostgreSQL</span><span class="st-pill">Linux</span><span class="st-pill">MongoDB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ── -->
+  <section class="about" id="about">
+    <div class="about-inner">
+      <p class="s-label">About</p>
+      <blockquote class="about-quote js-about-quote">
+        "Always curious. Probably somewhere right now living in a terminal,<em> floating like a bug in the cloud.</em>"
+      </blockquote>
+      <div class="about-grid">
+        <div class="about-cell"><div class="about-cell-label">Status</div><div class="about-cell-val">Available</div></div>
+        <div class="about-cell"><div class="about-cell-label">Location</div><div class="about-cell-val">Brazil · GMT-3</div></div>
+        <div class="about-cell"><div class="about-cell-label">Turnaround</div><div class="about-cell-val">1–2 weeks</div></div>
+        <div class="about-cell"><div class="about-cell-label">Languages</div><div class="about-cell-val">EN · PT</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT ── -->
+  <section class="contact" id="contact">
+    <div class="contact-inner">
+      <h2 class="contact-heading js-contact-h">
+        What's your<br><span class="hi">challenge?</span>
+      </h2>
+      <div class="contact-row">
+        <p class="contact-sub">Tell me what you're building. I'll scope it and send you a project brief — no commitment, no noise.</p>
+        <div class="contact-btns">
+          <a href="mailto:aiagent.mackenzie@gmail.com" class="btn btn-accent">Start a Project</a>
+          <a href="https://github.com/aiagentmackenzie-lang" target="_blank" class="btn btn-ghost-dark">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="f-logo">Raphael<span>.</span></div>
+    <div class="f-links">
+      <a href="mailto:aiagent.mackenzie@gmail.com">aiagent.mackenzie@gmail.com</a>
+      <a href="https://github.com/aiagentmackenzie-lang" target="_blank">GitHub</a>
+    </div>
+    <div class="f-copy">© 2026 Raphael</div>
+  </footer>
+
+  <!-- ─────────────────────────────────────────────
+       JS — Lenis + ScrollTrigger sync FIRST
+       then all animations
+  ───────────────────────────────────────────── -->
+  <script>
+    /* ── LENIS + SCROLLTRIGGER SYNC — always first ── */
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(time => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* ── MOBILE GUARD ── */
+    const isMobile = window.innerWidth < 768 || window.matchMedia('(pointer: coarse)').matches;
+
+    /* ── CUSTOM CURSOR ── */
+    if (!isMobile) {
+      const dot  = document.getElementById('c-dot');
+      const ring = document.getElementById('c-ring');
+      let mx = 0, my = 0, rx = 0, ry = 0;
+
+      window.addEventListener('mousemove', e => {
+        mx = e.clientX; my = e.clientY;
+        gsap.set(dot, { x: mx - 3.5, y: my - 3.5 });
+      });
+
+      gsap.ticker.add(() => {
+        rx += (mx - rx) * 0.1;
+        ry += (my - ry) * 0.1;
+        gsap.set(ring, { x: rx - 19, y: ry - 19 });
+      });
+
+      document.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('mouseenter', () => document.body.classList.add('hovered'));
+        el.addEventListener('mouseleave', () => document.body.classList.remove('hovered'));
+      });
+    }
+
+    /* ── HERO: SplitType kinetic name ── */
+    const nameEl = document.getElementById('js-name');
+    const split  = new SplitType(nameEl, { types: 'chars' });
+
+    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+    tl.from('#js-kicker', { y: 16, opacity: 0, duration: 0.6, delay: 0.1 })
+      .from(split.chars, {
+        y: 100,
+        opacity: 0,
+        rotateX: -60,
+        stagger: 0.04,
+        duration: 0.9,
+      }, '-=0.3')
+      .from('#js-tagline', { y: 28, opacity: 0, duration: 0.7 }, '-=0.4')
+      .from('#js-meta',    { y: 20, opacity: 0, duration: 0.6 }, '-=0.5');
+
+    /* ── STATEMENT: word scrub on scroll ── */
+    const stmtEl = document.querySelector('.js-statement');
+    const stmtSplit = new SplitType(stmtEl, { types: 'words' });
+    gsap.from(stmtSplit.words, {
+      y: 32,
+      opacity: 0,
+      stagger: 0.035,
+      duration: 0.55,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: stmtEl,
+        start: 'top 78%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    /* ── PROCESS: active nav item tracks scroll inside panel column ── */
+    if (!isMobile) {
+      const panels   = document.querySelectorAll('.p-panel');
+      const navItems = document.querySelectorAll('.p-nav-item');
+
+      panels.forEach((panel, i) => {
+        ScrollTrigger.create({
+          trigger: panel,
+          start: 'top 50%',
+          end: 'bottom 50%',
+          onEnter:     () => setActive(i),
+          onEnterBack: () => setActive(i),
+        });
+      });
+
+      function setActive(i) {
+        navItems.forEach(n => n.classList.remove('is-active'));
+        navItems[i]?.classList.add('is-active');
+      }
+    }
+
+    /* ── WORK: rows stagger in ── */
+    gsap.from('.work-item', {
+      x: -24,
+      opacity: 0,
+      stagger: 0.09,
+      duration: 0.55,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: '.work-list',
+        start: 'top 82%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    /* ── STACK TABLE rows ── */
+    gsap.from('.st-row', {
+      y: 18,
+      opacity: 0,
+      stagger: 0.1,
+      duration: 0.5,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: '.stack-table',
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    /* ── ABOUT QUOTE: SplitType word scrub ── */
+    const quoteEl = document.querySelector('.js-about-quote');
+    const quoteSplit = new SplitType(quoteEl, { types: 'words' });
+    gsap.from(quoteSplit.words, {
+      y: 24,
+      opacity: 0,
+      stagger: 0.028,
+      duration: 0.5,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: quoteEl,
+        start: 'top 82%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    /* ── ABOUT CELLS ── */
+    gsap.from('.about-cell', {
+      y: 16,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.45,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: '.about-grid',
+        start: 'top 85%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    /* ── CONTACT HEADING: SplitType + rotateX ── */
+    const contactH = document.querySelector('.js-contact-h');
+    const contactSplit = new SplitType(contactH, { types: 'words' });
+    gsap.from(contactSplit.words, {
+      y: 48,
+      opacity: 0,
+      rotateX: -30,
+      stagger: 0.06,
+      duration: 0.75,
+      ease: 'power4.out',
+      scrollTrigger: {
+        trigger: contactH,
+        start: 'top 82%',
+        toggleActions: 'play none none none',
+      },
+    });
+  </script>
+</body>
+</html>
