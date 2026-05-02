@@ -4,7 +4,7 @@ Personal portfolio website — fourth iteration.
 
 ## Overview
 
-Clean, modern portfolio showcasing IBM Certified Full-Stack AI Developer capabilities.
+Clean, modern portfolio showcasing Full-Stack AI Developer capabilities.
 
 ## Tech Stack
 
