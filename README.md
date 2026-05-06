@@ -17,7 +17,7 @@ Clean, modern portfolio showcasing Full-Stack AI Developer capabilities.
 Ready to build something? Get in touch:
 
 - 📧 **Email**: aiagent.mackenzie@gmail.com
-- 💼 **Services**: Web Design, Mobile App Development, AI Solutions, OpenClaw Setup
+- 💼 **Services**: Web Design, Mobile App Development, AI Solutions, Agentic Setup, and AI Security
 
 ## License
 
