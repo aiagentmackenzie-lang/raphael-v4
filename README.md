@@ -26,6 +26,7 @@ Ready to build something? Get in touch:
 - 💼 **LinkedIn**: [raphael-main](https://www.linkedin.com/in/raphael-main-0302093b6)
 - 🧑‍💻 **GitHub**: [aiagentmackenzie-lang](https://github.com/aiagentmackenzie-lang)
 - 🛠️ **Services**: AI engineering (CrewAI · LangChain · RAG · n8n · MCP), full-stack development (React Native/Expo · Next.js · Python/FastAPI), cybersecurity (AI security · SIEM · red-team)
+- 🤖 **Daily driver**: multi-agent AI fleet in live operation — OpenClaw · Pi · Hermes · Claude Code · Codex
 
 ## License
 
