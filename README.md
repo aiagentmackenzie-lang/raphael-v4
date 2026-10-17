@@ -4,11 +4,11 @@ Personal portfolio website, fourth iteration.
 
 ## Overview
 
-Portfolio of **Raphael Main**: AI engineer, full-stack developer, and cybersecurity engineer.
+Portfolio of **Raphael Main**: AI security engineer and founder. I build and secure production AI systems.
 
-- **16 open-source security & AI projects** on GitHub (github.com/aiagentmackenzie-lang)
-- **1 application live in production**: [English for Work](https://englishforwork.app): AI-powered workplace English coaching (React Native + Expo + Supabase, 7-language UI, 3,300+ automated tests)
-- **Lead security projects**: [SecurityScarletAI](https://github.com/aiagentmackenzie-lang/securityscarletai) (AI-native SIEM), [NeuralGuard](https://github.com/aiagentmackenzie-lang/NeuralGuard-AI-Firewall) (AI firewall, OWASP LLM Top 10), [NeuralStrike](https://github.com/aiagentmackenzie-lang/NeuralStrike) (adversarial AI red-team framework)
+- **1 application live in production**: [English for Work](https://englishforwork.app): AI-powered workplace English coaching (React Native + Expo + Supabase, 7-language UI, 4,632 automated tests across 426 suites)
+- **14 open-source security tools** on GitHub (github.com/aiagentmackenzie-lang)
+- **Lead security projects**: [GHOSTWIRE](https://github.com/aiagentmackenzie-lang/GHOSTWIRE) (network forensics, C2 beacon detection, JA4+), [SecurityScarletAI](https://github.com/aiagentmackenzie-lang/securityscarletai) (AI-native SIEM), [NeuralGuard](https://github.com/aiagentmackenzie-lang/NeuralGuard-AI-Firewall) (AI firewall, OWASP LLM Top 10), [NeuralStrike](https://github.com/aiagentmackenzie-lang/NeuralStrike) (adversarial AI red-team framework)
 
 Live site: https://aiagentmackenzie-lang.github.io/raphael-v4/
 
